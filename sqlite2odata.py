@@ -206,11 +206,15 @@ class Sqlite2OData:
 			# Get rows
 			rows = cursor.fetchall()
 
+			url_path_svc = url_root+'DataHub.svc/'
+
+			url_path_collection = url_path+'/'+table_name
+
 			# Atom response 
 			xml = '<?xml version="1.0" encoding="utf-8"?>'
-			xml += '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xml:base="'+url_root+'DataHub.svc/">'
+			xml += '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xml:base="'+url_path_svc+'">'
 			xml += '<title type="text">'+table_name+'</title>'
-			xml += '<id>'+url_path+'</id>'
+			xml += '<id>'+url_path_collection+'</id>'
 			xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
 			xml += '<link rel="self" title="'+table_name+'" href="'+table_name+'"></link>'
 
@@ -221,9 +225,9 @@ class Sqlite2OData:
 
 				if id == None:
 					# Get the row id
-					xml += '<id>'+url_path+'('+str(row[0])+')'+'</id>'
+					xml += '<id>'+url_path_collection+'('+str(row[0])+')'+'</id>'
 				else:
-					xml += '<id>'+url_path+'</id>'
+					xml += '<id>'+url_path_collection+'</id>'
 
 				xml += '<title type="text"></title>'
 
@@ -252,7 +256,7 @@ class Sqlite2OData:
 				xml += '</content>'
 
 				xml += '</entry>'
-			
+			|
 			xml += '</feed>'
 
 		except sqlite3.Error, e:
