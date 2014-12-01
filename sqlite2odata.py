@@ -213,7 +213,7 @@ class Sqlite2OData:
 			xml += '<id>'+url_path+'</id>'
 			xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
 			xml += '<link rel="self" title="'+table_name+'" href="'+table_name+'"></link>'
-
+			'''
 			# Create an entry for each record's table
 			for row in rows:
 
@@ -252,7 +252,7 @@ class Sqlite2OData:
 				xml += '</content>'
 
 				xml += '</entry>'
-
+			'''	
 			xml += '</feed>'
 
 		except sqlite3.Error, e:
