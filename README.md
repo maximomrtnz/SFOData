@@ -11,15 +11,15 @@ Live Demo
 Supported Operations
 --------------------
 
-1. Get Database's tables
+* Get Database's tables
 
 [Live Demo](https://sfodata.herokuapp.com/OData.svc/)
 
-2. Get Database's metadata
+* Get Database's metadata
 
 [Live Demo](https://sfodata.herokuapp.com/OData.svc/$metadata)
 
-3. Get Table's records
+* Get Table's records
 
 
 [Live Demo](https://sfodata.herokuapp.com/OData.svc/Productor)
