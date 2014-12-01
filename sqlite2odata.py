@@ -216,7 +216,7 @@ class Sqlite2OData:
 
 			xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
 
-			xml += '<author><name></name></author>'
+			#xml += '<author><name></name></author>'
 
 			xml += '<link rel="edit" title="'+table_name+'" href="'+table_name+'('+str(row[0])+')"></link>'
 
