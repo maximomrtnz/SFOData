@@ -1,6 +1,7 @@
 import sqlite3
 import time
 import urllib
+import re
 
 sqlite2odata_types = {
 	
@@ -179,75 +180,87 @@ class Sqlite2OData:
 
 	def get_entries(self, table_name, url_path, url_root):
 
-		#try:
+		try:
 
-		# Conect to the Database
-		con = sqlite3.connect(self.database_path)
+			# Conect to the Database
+			con = sqlite3.connect(self.database_path)
 
-		con.text_factory = str
+			con.text_factory = str
 
-		# Create a cursor 
-		cursor = con.cursor()
+			# Create a cursor 
+			cursor = con.cursor()
 
-		# Execute query to get all entries's table
-		cursor.execute('SELECT * FROM '+table_name+';') 
+			id = None
 
-		# Get rows
-		rows = cursor.fetchall()
+			# Check if url contains id
+			if table_name.find('(') != -1 and table_name.rfind(')') != -1:
+				id = table_name[table_name.index('(') + 1:table_name.rindex(')')]
+				table_name = re.findall(r"(.*?)\(.*\)+", table_name)[0]
+				# Execute query to get all entries's table
+				cursor.execute('SELECT * FROM '+table_name+' WHERE Id = '+id+';') 
+			else:
+				# Execute query to get all entries's table
+				cursor.execute('SELECT * FROM '+table_name+';') 	
 
+				
+			# Get rows
+			rows = cursor.fetchall()
 
-		# Atom response 
-		xml = '<?xml version="1.0" encoding="utf-8"?>'
-		xml += '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xml:base="'+url_root+'DataHub.svc/">'
-		xml += '<title type="text">'+table_name+'</title>'
-		xml += '<id>'+url_path+'</id>'
-		xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
-		xml += '<link rel="self" title="'+table_name+'" href="'+table_name+'"></link>'
-
-		# Create an entry for each record's table
-		for row in rows:
-
-			xml += '<entry>'
-
-			# Get the row id
-			xml += '<id>'+url_path+'('+str(row[0])+')'+'</id>'
-
-			xml += '<title type="text"></title>'
-
+			# Atom response 
+			xml = '<?xml version="1.0" encoding="utf-8"?>'
+			xml += '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xml:base="'+url_root+'DataHub.svc/">'
+			xml += '<title type="text">'+table_name+'</title>'
+			xml += '<id>'+url_path+'</id>'
 			xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
+			xml += '<link rel="self" title="'+table_name+'" href="'+table_name+'"></link>'
 
-			#xml += '<author><name></name></author>'
+			# Create an entry for each record's table
+			for row in rows:
 
-			xml += '<link rel="edit" title="'+table_name+'" href="'+table_name+'('+str(row[0])+')"></link>'
+				xml += '<entry>'
 
-			xml += '<category term="DataHubModel.'+table_name+'" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme"></category>'
+				if id == None:
+					# Get the row id
+					xml += '<id>'+url_path+'('+str(row[0])+')'+'</id>'
+				else:
+					xml += '<id>'+url_path+'</id>'
 
-			xml += '<content type="application/xml">'
+				xml += '<title type="text"></title>'
 
-			xml += '<m:properties>'	
+				xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
 
-			# Get Table Fields
-			cursor.execute('PRAGMA table_info('+table_name+')')
-			data = cursor.fetchall()
+				xml += '<author><name></name></author>'
 
-			for d in data:
+				xml += '<link rel="edit" title="'+table_name+'" href="'+table_name+'('+str(row[0])+')"></link>'
 
-				xml += '<d:'+d[1]+' m:type="'+sqlite2odata_types[d[2]]+'">'+urllib.quote(str(row[d[0]]))+'</d:'+d[1]+'>' 
+				xml += '<category term="DataHubModel.'+table_name+'" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme"></category>'
 
-			xml += '</m:properties>'
+				xml += '<content type="application/xml">'
 
-			xml += '</content>'
+				xml += '<m:properties>'	
 
-			xml += '</entry>'
+				# Get Table Fields
+				cursor.execute('PRAGMA table_info('+table_name+')')
+				data = cursor.fetchall()
 
-		xml += '</feed>'
+				for d in data:
 
-	#except sqlite3.Error, e:
+					xml += '<d:'+d[1]+' m:type="'+sqlite2odata_types[d[2]]+'">'+urllib.quote(str(row[d[0]]))+'</d:'+d[1]+'>' 
 
-		#print "Error %s:" % e.args[0]
-		#sys.exit(1)		
+				xml += '</m:properties>'
 
-	#finally:
+				xml += '</content>'
 
-		# Return Atom response
-		return xml
+				xml += '</entry>'
+
+			xml += '</feed>'
+
+		except sqlite3.Error, e:
+
+			print "Error %s:" % e.args[0]
+			sys.exit(1)		
+
+		finally:
+
+			# Return Atom response
+			return xml

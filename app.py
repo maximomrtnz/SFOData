@@ -21,7 +21,6 @@ def get_metadata():
 def get_entries(table):
 	xml =  s2od.get_entries(table, request.url, request.url_root)
 	return Response(xml, mimetype='text/xml')	
-	#return xml		
-
+	
 if __name__ == "__main__":
  	app.run(debug=True)
