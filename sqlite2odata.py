@@ -245,7 +245,7 @@ class Sqlite2OData:
 
 				for d in data:
 
-					xml += '<d:'+d[1]+' m:type="'+sqlite2odata_types[d[2]]+'">'+urllib.quote(str(row[d[0]]))+'</d:'+d[1]+'>' 
+					xml += '<d:'+d[1]+' m:type="'+sqlite2odata_types[d[2]]+'">'+str(row[d[0]])+'</d:'+d[1]+'>' 
 
 				xml += '</m:properties>'
 
