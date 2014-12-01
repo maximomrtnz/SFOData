@@ -210,7 +210,7 @@ class Sqlite2OData:
 			xml += '<entry>'
 
 			# Get the row id
-			xml += '<id>'+url_path+'(\''+str(row[0])+'\')'+'</id>'
+			xml += '<id>'+url_path+'('+str(row[0])+')'+'</id>'
 
 			xml += '<title type="text"></title>'
 
@@ -218,7 +218,7 @@ class Sqlite2OData:
 
 			xml += '<author><name></name></author>'
 
-			xml += '<link rel="edit" title="'+table_name+'" href="'+table_name+'(\''+str(row[0])+'\')"></link>'
+			xml += '<link rel="edit" title="'+table_name+'" href="'+table_name+'('+str(row[0])+')"></link>'
 
 			xml += '<category term="DataHubModel.'+table_name+'" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme"></category>'
 
