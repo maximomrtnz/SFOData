@@ -178,93 +178,109 @@ class Sqlite2OData:
 			# Return Atom response
 			return xml
 
-	def get_entries(self, table_name, url_path, url_root):
+	def get_entries(self, table_name, url_root, top_param, select_param, filter_param, order_param):
 
-		try:
+		#try:
 
-			# Conect to the Database
-			con = sqlite3.connect(self.database_path)
+		# Conect to the Database
+		con = sqlite3.connect(self.database_path)
 
-			con.text_factory = str
+		con.text_factory = str
 
-			# Create a cursor 
-			cursor = con.cursor()
+		# Create a cursor 
+		cursor = con.cursor()
 
-			id = None
+		id = None
 
-			# Check if url contains id
-			if table_name.find('(') != -1 and table_name.rfind(')') != -1:
-				id = table_name[table_name.index('(') + 1:table_name.rindex(')')]
-				table_name = re.findall(r"(.*?)\(.*\)+", table_name)[0]
-				# Execute query to get all entries's table
-				cursor.execute('SELECT * FROM '+table_name+' WHERE Id = '+id+';') 
-			else:
-				# Execute query to get all entries's table
-				cursor.execute('SELECT * FROM '+table_name+';') 	
+		query = 'SELECT * FROM '+table_name
+
+		# Check if url contains id
+		if table_name.find('(') != -1 and table_name.rfind(')') != -1:
+			id = table_name[table_name.index('(') + 1:table_name.rindex(')')]
+			table_name = re.findall(r"(.*?)\(.*\)+", table_name)[0]
+			# Execute query to get all entries's table
+			query+=' WHERE Id = '+id 
+		
+		else: 
+
+			if select_param != None:
+				query = 'SELECT '+select_param+' FROM '+table_name
+
+			if order_param != None:
+				query += ' ORDER BY '+order_param	
+
+			if top_param != None:
+				query += ' LIMIT '+top_param
 
 				
-			# Get rows
-			rows = cursor.fetchall()
+				
+				
 
-			url_path_svc = url_root+'DataHub.svc/'
+		cursor.execute(query) 	
 
-			url_path_collection = url_path_svc+'/'+table_name
+			
+		# Get rows
+		rows = cursor.fetchall()
 
-			# Atom response 
-			xml = '<?xml version="1.0" encoding="utf-8"?>'
-			xml += '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xml:base="'+url_path_svc+'">'
-			xml += '<title type="text">'+table_name+'</title>'
-			xml += '<id>'+url_path_collection+'</id>'
+		url_path_svc = url_root+'DataHub.svc/'
+
+		url_path_collection = url_path_svc+'/'+table_name
+
+		# Atom response 
+		xml = '<?xml version="1.0" encoding="utf-8"?>'
+		xml += '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xml:base="'+url_path_svc+'">'
+		xml += '<title type="text">'+table_name+'</title>'
+		xml += '<id>'+url_path_collection+'</id>'
+		xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
+		xml += '<link rel="self" title="'+table_name+'" href="'+table_name+'"></link>'
+
+		# Create an entry for each record's table
+		for row in rows:
+
+			xml += '<entry>'
+
+			if id == None:
+				# Get the row id
+				xml += '<id>'+url_path_collection+'('+str(row[0])+')'+'</id>'
+			else:
+				xml += '<id>'+url_path_collection+'</id>'
+
+			xml += '<title type="text"></title>'
+
 			xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
-			xml += '<link rel="self" title="'+table_name+'" href="'+table_name+'"></link>'
 
-			# Create an entry for each record's table
-			for row in rows:
+			xml += '<author><name></name></author>'
 
-				xml += '<entry>'
+			xml += '<link rel="edit" title="'+table_name+'" href="'+table_name+'('+str(row[0])+')"></link>'
 
-				if id == None:
-					# Get the row id
-					xml += '<id>'+url_path_collection+'('+str(row[0])+')'+'</id>'
-				else:
-					xml += '<id>'+url_path_collection+'</id>'
+			xml += '<category term="DataHubModel.'+table_name+'" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme"></category>'
 
-				xml += '<title type="text"></title>'
+			xml += '<content type="application/xml">'
 
-				xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
+			xml += '<m:properties>'	
 
-				xml += '<author><name></name></author>'
+			# Get Table Fields
+			cursor.execute('PRAGMA table_info('+table_name+')')
+			data = cursor.fetchall()
 
-				xml += '<link rel="edit" title="'+table_name+'" href="'+table_name+'('+str(row[0])+')"></link>'
-
-				xml += '<category term="DataHubModel.'+table_name+'" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme"></category>'
-
-				xml += '<content type="application/xml">'
-
-				xml += '<m:properties>'	
-
-				# Get Table Fields
-				cursor.execute('PRAGMA table_info('+table_name+')')
-				data = cursor.fetchall()
-
-				for d in data:
-
+			for d in data:
+				if (select_param != None and select_param.find(d[1]) != -1) or select_param == None:
 					xml += '<d:'+d[1]+' m:type="'+sqlite2odata_types[d[2]]+'">'+str(row[d[0]])+'</d:'+d[1]+'>' 
 
-				xml += '</m:properties>'
+			xml += '</m:properties>'
 
-				xml += '</content>'
+			xml += '</content>'
 
-				xml += '</entry>'
-				
-			xml += '</feed>'
+			xml += '</entry>'
 
-		except sqlite3.Error, e:
+		xml += '</feed>'
 
-			print "Error %s:" % e.args[0]
-			sys.exit(1)		
+	#except sqlite3.Error, e:
 
-		finally:
+	#	print "Error %s:" % e.args[0]
+	#	sys.exit(1)		
 
-			# Return Atom response
-			return xml
+	#finally:
+
+		# Return Atom response
+		return xml

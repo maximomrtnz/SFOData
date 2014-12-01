@@ -19,8 +19,16 @@ def get_metadata():
 
 @app.route('/OData.svc/<table>')
 def get_entries(table):
-	xml =  s2od.get_entries(table, request.url, request.url_root)
-	return Response(xml, mimetype='application/atom+xml;charset=utf-8')	
 	
+	# Get params from URL if exists
+	top_param = request.args.get('$top')
+	select_param = request.args.get('$select')
+	filter_param = request.args.get('$filter')
+	order_param = request.args.get('$orderby')
+
+
+	xml =  s2od.get_entries(table,request.url_root, top_param, select_param, filter_param, order_param)
+	return Response(xml, mimetype='application/atom+xml;charset=utf-8')	
+
 if __name__ == "__main__":
  	app.run(debug=True)
