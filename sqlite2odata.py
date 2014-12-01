@@ -208,7 +208,7 @@ class Sqlite2OData:
 
 			url_path_svc = url_root+'DataHub.svc/'
 
-			url_path_collection = url_path+'/'+table_name
+			url_path_collection = url_path_svc+'/'+table_name
 
 			# Atom response 
 			xml = '<?xml version="1.0" encoding="utf-8"?>'
@@ -256,7 +256,7 @@ class Sqlite2OData:
 				xml += '</content>'
 
 				xml += '</entry>'
-			|
+				
 			xml += '</feed>'
 
 		except sqlite3.Error, e:
