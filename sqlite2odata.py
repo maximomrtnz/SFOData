@@ -1,4 +1,5 @@
 import sqlite3
+import time
 
 sqlite2odata_types = {
 	
@@ -174,3 +175,78 @@ class Sqlite2OData:
 			
 			# Return Atom response
 			return xml
+
+	def get_entries(self, table_name, url_path, url_root):
+
+		#try:
+
+		# Conect to the Database
+		con = sqlite3.connect(self.database_path)
+
+		con.text_factory = str
+
+		# Create a cursor 
+		cursor = con.cursor()
+
+		# Execute query to get all entries's table
+		cursor.execute('SELECT * FROM '+table_name+';') 
+
+		# Get rows
+		rows = cursor.fetchall()
+
+
+		# Atom response 
+		xml = '<?xml version="1.0" encoding="utf-8"?>'
+		xml += '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xml:base="'+url_root+'DataHub.svc/">'
+		xml += '<title type="text">'+table_name+'</title>'
+		xml += '<id>'+url_path+'</id>'
+		xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
+		xml += '<link rel="self" title="'+table_name+'" href="'+table_name+'"></link>'
+
+		# Create an entry for each record's table
+		for row in rows:
+
+			xml += '<entry>'
+
+			# Get the row id
+			xml += '<id>'+url_path+'(\''+str(row[0])+'\')'+'</id>'
+
+			xml += '<title type="text"></title>'
+
+			xml += '<updated>'+time.strftime('%Y-%m-%dT%H:%M:%SZ')+'</updated>'
+
+			xml += '<author><name></name></author>'
+
+			xml += '<link rel="edit" title="'+table_name+'" href="'+table_name+'(\''+str(row[0])+'\')"></link>'
+
+			xml += '<category term="DataHubModel.'+table_name+'" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme"></category>'
+
+			xml += '<content type="application/xml">'
+
+			xml += '<m:properties>'	
+
+			# Get Table Fields
+			cursor.execute('PRAGMA table_info('+table_name+')')
+			data = cursor.fetchall()
+
+			for d in data:
+
+				xml += '<d:'+d[1]+' m:type="'+sqlite2odata_types[d[2]]+'">'+str(row[d[0]])+'</d:'+d[1]+'>' 
+
+			xml += '</m:properties>'
+
+			xml += '</content>'
+
+			xml += '</entry>'
+
+		xml += '</feed>'
+
+	#except sqlite3.Error, e:
+
+		#print "Error %s:" % e.args[0]
+		#sys.exit(1)		
+
+	#finally:
+
+		# Return Atom response
+		return xml
